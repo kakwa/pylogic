@@ -79,5 +79,94 @@ Usage
 Api Documentation
 -----------------
 
+## Propositional Logic  ##
+
+Propositional logic statements can be validated using logic.py, meaning their truth can be easily computed and returned as a Python bool. Depending on the situation, the user may wish to test that a logical statement is true for all valuations of all possible atoms (ie. that the statement is a tautology), that it is true for at least one valuation (ie. that the statement is satisfiable), or in cases where the statement is not a tautology, to print out a truth table showing the valuations that make the statement false.
+
+## Grammar  ##
+
+All public functions take a string as an argument that defines the statement to be validated. This logic string must conform to the syntax specified by logic.py. The grammar is designed in such a way to make logical statements simple to construct and easy to read. For this reason propositional atoms are allowed to be any string that begins with a [ and ends with a ].
+
+The full grammar for propositional logic is specified by the following table: 
+
+```
+<atom>      ::= [any string in these brackets]   
+   <formula>    ::= <formula> implies <formula>                 
+            | <formula> therefore <formula>                 
+            | <formula> or <formula>                 
+            | <formula> and <formula>                 
+            | not <formula>                 
+            | {<formula>}                    
+            | <atom> 
+```
+As with the usual precedence rules of propositional logic, the order of operations is not, and, or, implies, where therefore is synonymous with implies and is added as syntactic sugar to aid readability of logical sentences that would include the symbol `.
+
+We can translate a traditional logical statement to our more human and machine-friendly syntax:
+
+
+
+
+```
+not [P] implies {[R] and [Q]} therefore [R] or [P]
+```
+
+## logic.validate() ##
+
+The logic.validate() method is used to evaluate a string that represents a logical statement specifies in the above syntax. This function can be called directly from the logic module without instantiating any class objects. 
+
+logic.validate() takes a string as an argument and returns a Python bool that is True if the logical statement is a tautology (meaning all possible valuations of propositional atoms lead to the statement being true), and False otherwise.
+
+## logic.satisfiable() ##
+
+Unlike logic.validate(), logic.satisfiable() returns True if there is at least one valuation of the propositional atoms in the logical statement that lead to the statement being true. This method returns a bool, so in order to determine details about the valuation for the atoms that led to this statement’s truth, you must call Context.printTruthTable().
+
+## The Context Object ##
+
+The Context object contains the state information that gets created in setting up or evaluating a logical statement. It also provides further control. With the Context object you can do perform two additional functions: printing a truth table, and specifing assumptions before calling validate().
+
+The Context object is created with the one line call:
+
+```python
+c = logic.Context()
+```
+
+At this point you can print a truth table, which will simply produce a column for each propositional atom and one for the formula that the user passes in as an argument. It will not produce columns for any sub-formulas. As an optional second argument, the printTruthTable() function will take a string that will serve as the column separator in the printed output. By default this separator is a tab character.
+
+```python
+c = logic.Context()
+c.printTruthTable("[P] and [Q] or [P] and [Q]", ",")
+
+
+# This prints out the following:
+
+
+# Q,P,{{{[P] and [Q]} or [P]} and [Q]}
+# False,False,False
+# True,False,False
+# False,True,False
+# True,True,True
+```
+
+The Context object will also accept a number of logical formulas as assumptions against which subsequent calls to validate() will be evaluated. For example, the statement:
+
+
+```python
+{{{[P] and [Q]} and [R]} and {[S] and [T]}} implies {[Q] and [S]}
+```
+
+can be simplified with the use of assumptions:
+
+
+```
+import logic
+context = logic.Context()
+context.assume("[P] and [Q] and [R]")
+context.assume("[S] and [T]")
+print str(context.validate("[Q] and [S]"))
+# prints out "True"
+```
+
+With the last call to context.validate(), the Context object will reconstruct the longer sentence that includes the implication out of all of the assumptions that it knows about. In other words, all assumptions are composed in a conjunction. The formula in the validate() method will then be combined with an implication, and the resulting formula will be evaluated, with its truth being returned by validate().
+
 Examples
 --------
