@@ -102,7 +102,9 @@ As with the usual precedence rules of propositional logic, the order of operatio
 
 We can translate a traditional logical statement to our more human and machine-friendly syntax:
 
+<img src="https://raw.github.com/kakwa/pylogic/master/doc/images/prop-log-1.png"/>
 
+becomes:
 
 
 ```
