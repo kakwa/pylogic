@@ -11,7 +11,7 @@ logic.py module.
 ### LOGICAL EXAMPLES ###
 
 ### YOU MUST IMPORT THE LOGIC MODULE FIRST ###
-import logic
+from pylogic import logic
 
 def computeAndPrintResult(sentence):
     print sentence + " is " + str(logic.validate(sentence)) + "\n"
