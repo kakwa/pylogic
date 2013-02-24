@@ -73,13 +73,12 @@ To install pylogic:
 
 It will install logic.py, yacc.py and lex.py in pylogic module.
 
-Usage
-=====
 
-Api Documentation
------------------
+Documentation
+=============
 
-## Propositional Logic  ##
+Propositional Logic
+-------------------
 
 Propositional logic statements can be validated using logic.py, meaning their truth can be easily computed and returned as a Python bool. Depending on the situation, the user may wish to test that a logical statement is true for all valuations of all possible atoms (ie. that the statement is a tautology), that it is true for at least one valuation (ie. that the statement is satisfiable), or in cases where the statement is not a tautology, to print out a truth table showing the valuations that make the statement false.
 
@@ -157,7 +156,7 @@ The Context object will also accept a number of logical formulas as assumptions 
 can be simplified with the use of assumptions:
 
 
-```
+```python
 import logic
 context = logic.Context()
 context.assume("[P] and [Q] and [R]")
@@ -168,5 +167,135 @@ print str(context.validate("[Q] and [S]"))
 
 With the last call to context.validate(), the Context object will reconstruct the longer sentence that includes the implication out of all of the assumptions that it knows about. In other words, all assumptions are composed in a conjunction. The formula in the validate() method will then be combined with an implication, and the resulting formula will be evaluated, with its truth being returned by validate().
 
-Examples
---------
+First-Order Logic
+-----------------
+
+Formulas in first-order logic are also supported by logic.py. First-order logic is an important feature as it allows the user to test pre and post-conditions of her code using predicate functions.
+
+Predicate functions are extensions of propositional atoms. They are like propositional atoms but they are allowed to take a finite number of arguments. These arguments are objects (strings, integers, or any object that can have a unique id) and they must belong to a user-specified domain. The objects, or terms, may be relevant to the code that is in test. For instance, if the user were to test that a sorting algorithm worked correctly over a list, he might set the domain to be all objects in the list and check to see that for all items in the domain, their relative positions in the list are based on their ordering.
+
+In order to use first-order logical validation, there are three features that need to be understood: terms, predicate functions, and the grammar for using quantifiers.
+
+## Terms ##
+
+As previously stated, terms are objects that can serve as an argument to a predicate function. Terms belong to a finite list that determines the pool of all possible values. This is called the domain. The domain for terms can be specified on a Context object with a call to Context.setTermDomain().
+
+Context.setTermDomain() takes just a single argument, a Python list.
+
+For instance:
+
+```python
+c.setTermDomain(["apple", "orange", "banana", "carrot"])
+```
+
+sets the domain to be four fruits and vegetables. But since the Context can take any Python list, it is not confined to just strings. A finite range for integers can be easily created using the Python range() function:
+
+```python
+c.setTermDomain(range(20))
+```
+
+which sets the domain to be all integers from 0-19 inclusive. Note that while the current version (1.0) of logic.py supports setting a domain with a list of any type, strange behavior can occur if the objects in the domain list are not unique when cast as strings.
+
+## Predicate Functions ##
+
+Predicate functions can be defined implicitly or explicitly. Implicitly defined predicate functions are those that are added to an assume() or assumePredicate() function. By doing this, the user does not have to explicitly write a function and register it with the Context, which can save some time for simple models:
+
+```python
+context.assumePredicate("orange colored(orange)")
+context.assumePredicate("orange colored(carrot)")
+```
+
+Here we have restated the previous assumption in two calls to assumePredicate(). This tells the Context object to remember that “orange colored” is true for an orange and a carrot. Using the regular assume() method requires that the validate() function do some extra work to infer which values in the domain must be true in order to make the assumption true.
+
+Note that with assumePredicate() you omit the square brackets.
+
+Sometimes it’s too costly and tedious to enumerate all terms in the domain that make a particular predicate function true. This is especially the case for something simple like the predicate is odd(x). Considering a possible domain of 100 values, this would require 50 assumptions to be manually entered by the user, whereas a Python function could be defined in one line that determines if x is odd. For this reason, there are explicitly defined predicate functions.
+
+Any Python function can be set on the Context object. In order to do this, the Python function must first be defined, and its arity known. The function and its arity are passed to the Context.setPredicateFunction() function:
+
+```python
+context = logic.Context()
+# define our predicate function, cast all arguments to ints!
+# the validator will stringify them before passing them here
+def greater_than(x, y):
+   return int(x) > int(y)
+
+
+context.setTermDomain(range(10))
+# tell the context about our predicate function, with arity 2
+context.setPredicateFunction(greater_than,2)
+
+
+print str(context.validate("[greater_than(5,2)]")) # prints True 
+```
+
+This example shows how predicate functions with a positive arity can be used to explain the relationship between two numbers. Beware of using functions with too-high of an arity. Existential and universal quantifiers can be evaluated at roughly O(n) for a domain of length n and a predicate function with arity 1.
+
+If a predicate function has arity a however, this becomes O(n^a), so a seemingly harmless domain defined by c.setTermDomain(range(100)) with a predicate of arity 3 now leads to 1,000,000 invocations of that predicate function. In practice the validate() method isn’t quite so inefficient. It will at least not call the predicate function a second time if it has already been executed with the same arguments.
+
+## Grammar with First-Order Quantifiers ##
+
+Finally, the universal (all x) and existential (exists x) quantifiers allow to shine all of the infrastructure that we have set up. You can evaluate logical statements that check if there is a term in the domain that makes a formula true at least once (through exists x) or if a formula is true for all terms in the domain (with all x). The first-order quantifiers can be combined and ordered to express a greater number of possibilities.
+
+The full gramar with quantifiers included is:
+
+```
+<atom>  ::=     [any string in these brackets]
+
+
+   <function>  ::=     [any string(comma separated list)]
+   
+   <variable>  ::=     a single word (no spaces)
+ 
+    <formula>  ::=     <formula> implies <formula>
+                     | <formula> therefore <formula>
+                     | <formula> or <formula>
+                     | <formula> and <formula>
+                     | exists <variable> <formula>
+                     | all <variable> <formula>
+                     | not <formula>
+                     | {<formula>}  
+                     | <function>
+                     | <atom> 
+```
+
+This grammar is somewhat loosely defined here, with <function>, <atom>, and <variable> as human readable strings instead of the conventional Backus-Naur Form.
+
+The exists operator is exemplified here: 
+
+```python
+
+context = logic.Context()
+# define our predicate function, cast all arguments to ints!
+# the validator will stringify them before passing them here
+def greater_than(x, y):
+    return int(x) > int(y)
+
+
+context.setTermDomain(range(10))
+# tell the context about our predicate function, with arity 2
+context.setPredicateFunction(greater_than,2)
+
+
+print str(context.validate("exists x {[greater_than(x,5)]}")) # prints True 
+```
+
+Here a domain is set up that includes all integers from 0-9 inclusive. A predicate function, greater than() is explicitly defined and registered with te context. Finally in the last line we print out the validity of a statement which tests whether there is a variable, x in the domain such that x > 5. This statement is trivially true since the domain includes 6.
+
+An example of the universal quantifier in use:
+
+```python
+context = logic.Context()
+
+
+context.assumePredicate("is a fruit(banana)")
+context.assumePredicate("is a fruit(apple)")
+
+
+context.setTermDomain(["banana", "apple", "carrot"])
+
+
+print str(context.validate("all  x {[is a fruit(x)]}")) # prints False
+```
+
+Here we set the term domain to include three food items and implicitly define a predicate, is a fruit that is true for only “banana” and “apple”. Finally the statement all x {[is a fruit(x)]} is validated and returns False.
