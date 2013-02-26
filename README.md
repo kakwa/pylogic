@@ -14,6 +14,13 @@ License
 * Source code: LGPL
 * Documentation: Commons Attribution 3.0 Unported License.
 
+What is different in this fork?
+===============================
+
+Nearly nothing, documentation is taken from the author website, source code is the same, I've just added
+a setup.py for easier deployment and imported the documentation in this Readme.md.
+
+
 Description
 ===========
 
