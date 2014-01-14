@@ -308,3 +308,7 @@ print str(context.validate("all  x {[is a fruit(x)]}")) # prints False
 ```
 
 Here we set the term domain to include three food items and implicitly define a predicate, is a fruit that is true for only “banana” and “apple”. Finally the statement all x {[is a fruit(x)]} is validated and returns False.
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/kakwa/pylogic/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
